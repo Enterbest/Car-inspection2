@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ตรวจความหนาสี</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3348;
+    --accent:#e8c547;--text:#f0eff4;--muted:#8b8fa8;
+    --ok:#3dd68c;--warn:#f5a623;--danger:#ff5c5c;
+    --radius:14px;--font:'Helvetica Neue',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100dvh}
+  .app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px 12px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between}
+  .app-header h1{font-size:15px;font-weight:700}
+  .app-header .subtitle{font-size:11px;color:var(--muted);margin-top:1px}
+  .header-actions{display:flex;align-items:center;gap:10px}
+  .report-id{font-size:11px;color:var(--accent);font-weight:600}
+  .btn-shortcut-settings{background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .15s}
+  .btn-shortcut-settings:hover{color:var(--accent);background:var(--surface2)}
+  .steps-nav{display:flex;overflow-x:auto;gap:6px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);scrollbar-width:none}
+  .steps-nav::-webkit-scrollbar{display:none}
+  .step-pill{flex-shrink:0;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s}
+  .step-pill.active{background:var(--accent);color:#0f1117;border-color:var(--accent);font-weight:700}
+  .step-pill.done{border-color:var(--ok);color:var(--ok)}
+  .screen{display:none;padding:16px;max-width:480px;margin:0 auto}
+  .screen.active{display:block}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+  .card-title{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:12px}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+  .field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:15px;font-family:var(--font);outline:none;transition:border-color .15s}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+  .field select option{background:var(--surface2)}
+  .field textarea{resize:vertical;min-height:72px}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .paint-point{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;position:relative}
+  .paint-point-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .paint-part-name{font-size:14px;font-weight:600}
+  .paint-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em}
+  .badge-ok{background:rgba(61,214,140,.15);color:var(--ok);border:1px solid rgba(61,214,140,.3)}
+  .badge-warn{background:rgba(245,166,35,.15);color:var(--warn);border:1px solid rgba(245,166,35,.3)}
+  .badge-danger{background:rgba(255,92,92,.15);color:var(--danger);border:1px solid rgba(255,92,92,.3)}
+  .badge-empty{background:rgba(139,143,168,.1);color:var(--muted);border:1px solid var(--border)}
+  .paint-input-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .micron-input{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;outline:none;transition:border-color .15s;font-family:var(--font)}
+  .micron-input:focus{border-color:var(--accent)}
+  .micron-unit{font-size:13px;color:var(--muted);white-space:nowrap}
+  .photo-upload-area{border:1.5px dashed var(--border);border-radius:8px;aspect-ratio:4/3;min-height:unset;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:border-color .15s;position:relative;overflow:hidden;background:var(--bg)}
+  .photo-upload-area:hover{border-color:var(--accent)}
+  .photo-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+  .photo-upload-area .upload-label{display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
+  .upload-icon{font-size:24px}
+  .upload-text{font-size:12px;color:var(--muted)}
+  .photo-preview{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;display:block}
+  .photo-clear{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.7);border:none;color:white;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+  .result-bar{height:5px;border-radius:3px;margin:6px 0;background:var(--bg);overflow:hidden}
+  .result-fill{height:100%;border-radius:3px;transition:width .3s,background .3s}
+  .mini-note{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color .15s;resize:none;min-height:40px}
+  .mini-note:focus{border-color:var(--accent)}
+  .summary-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+  .summary-row:last-child{border-bottom:none}
+  .summary-label{font-size:13px;color:var(--muted)}
+  .summary-val{font-size:14px;font-weight:600}
+  .score-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 0 10px}
+  .score-ring{position:relative;width:110px;height:110px}
+  .score-ring svg{transform:rotate(-90deg)}
+  .score-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .score-num{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
+  .score-label-text{font-size:10px;color:var(--muted);letter-spacing:.06em;margin-top:-2px}
+  .btn{width:100%;padding:14px;border-radius:10px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity .15s,transform .1s;letter-spacing:.02em}
+  .btn:active{transform:scale(.98);opacity:.85}
+  .btn-primary{background:var(--accent);color:#0f1117}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+  .btn-danger{background:rgba(255,92,92,.12);color:var(--danger);border:1px solid rgba(255,92,92,.25)}
+  .btn-row{display:flex;gap:10px;margin-top:6px}
+  .btn-row .btn{flex:1}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:14px;font-weight:500;z-index:999;transition:transform .25s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  #pdf-preview{font-size:13px;line-height:1.6}
+  #pdf-preview img{width:100% !important;aspect-ratio:4/3 !important;object-fit:cover !important;border-radius:6px;margin-top:6px;display:block}
+  .pdf-section-head{background:var(--surface2);border-left:3px solid var(--accent);padding:8px 12px;border-radius:0 6px 6px 0;margin:14px 0 8px;font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--accent)}
+  .pdf-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+  .pdf-row:last-child{border-bottom:none}
+  .pdf-key{color:var(--muted)}
+  .pdf-val{font-weight:500;text-align:right}
+
+  .hist-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;position:relative}
+  .hist-item:active{border-color:var(--accent)}
+  .hist-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+  .hist-car{font-size:15px;font-weight:700}
+  .hist-score{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+  .hist-meta{font-size:12px;color:var(--muted);line-height:1.6}
+  .hist-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .hist-tag{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600}
+  .hist-actions{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+  .hist-btn{flex:1;padding:8px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+  .hist-btn:active{opacity:.7}
+  .hist-btn-pdf{background:rgba(232,197,71,.15);color:var(--accent)}
+  .hist-btn-open{background:var(--surface2);color:var(--text)}
+  .hist-btn-del{background:rgba(255,92,92,.1);color:var(--danger)}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+  .empty-icon{font-size:40px;margin-bottom:12px}
+  .empty-text{font-size:14px;line-height:1.6}
+  .save-indicator{position:fixed;top:12px;right:16px;background:var(--ok);color:#0f1117;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;z-index:200;opacity:0;transition:opacity .3s}
+  .save-indicator.show{opacity:1}
+  .search-box{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:var(--font);outline:none;margin-bottom:14px}
+  .search-box:focus{border-color:var(--accent)}
+  .hist-count{font-size:12px;color:var(--muted);margin-bottom:10px}
+
+  @media print {
+    body { background: white !important; color: #111 !important; font-family: 'Sarabun', 'TH Sarabun New', Arial, sans-serif; }
+    .app-header, .steps-nav, .btn, .btn-row, #toast, .save-indicator,
+    .photo-upload-area input[type=file], .photo-clear, .mini-note,
+    .hist-actions, .search-box { display: none !important; }
+    .screen { display: block !important; padding: 0 !important; }
+    #screen-0, #screen-1, #screen-2, #screen-3, #screen-4, #screen-6 { display: none !important; }
+    #screen-5 { display: block !important; }
+    .card { border: 1px solid #ddd !important; background: white !important; box-shadow: none !important; page-break-inside: avoid; margin-bottom: 12px; }
+    #pdf-preview { color: #111 !important; }
+    #pdf-preview img { display: block !important; width: 100% !important; aspect-ratio: 4/3 !important; object-fit: cover !important; page-break-inside: avoid; break-inside: avoid; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .pdf-section-head { background: #f5f5f5 !important; color: #333 !important; border-left: 3px solid #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .pdf-key { color: #666 !important; }
+    .pdf-val { color: #111 !important; }
+    .pdf-row { border-bottom: 1px solid #eee !important; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .print-report-wrap { display: block !important; }
+  }
+  .print-report-wrap { display: none; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div>
+    <h1>🔍 ตรวจความหนาสี</h1>
+    <div class="subtitle">Paint Thickness Inspection</div>
+  </div>
+  <div class="header-actions">
+    <div class="report-id" id="report-id-display"></div>
+    <button class="btn-shortcut-settings" onclick="showToast('⚙️ ระบบตั้งค่าคีย์ลัดกำลังพัฒนา...')" title="ตั้งค่าคีย์ลัด">...</button>
+  </div>
+</div>
+
+<div class="steps-nav" id="steps-nav">
+  <button class="step-pill active" onclick="goTo(0)">ข้อมูลรถ</button>
+  <button class="step-pill" onclick="goTo(1)">วัดสี</button>
+  <button class="step-pill" onclick="goTo(2)">ห้องโดยสาร</button>
+  <button class="step-pill" onclick="goTo(3)">ห้องเครื่อง</button>
+  <button class="step-pill" onclick="goTo(4)">สรุปผล</button>
+  <button class="step-pill" onclick="goTo(5)">รายงาน</button>
+  <button class="step-pill" onclick="goTo(6)">📋 ประวัติ</button>
+</div>
+
+<div class="save-indicator" id="save-indicator">✓ บันทึกแล้ว</div>
+
+<div class="screen active" id="screen-0">
+  <div class="card">
+    <div class="card-title">ข้อมูลรถ</div>
+    <div class="field-row">
+      <div class="field"><label>ยี่ห้อ</label>
+        <select id="brand" onchange="onBrandChange();autosave()">
+          <option value="">— เลือกยี่ห้อ —</option>
+          <option>Toyota</option><option>Honda</option><option>Isuzu</option>
+          <option>Mitsubishi</option><option>Mazda</option><option>Nissan</option>
+          <option>Ford</option><option>Suzuki</option><option>Chevrolet</option>
+          <option>MG</option><option>GWM / Haval</option><option>BYD</option>
+          <option>Neta</option><option>BMW</option><option>Mercedes-Benz</option>
+          <option>Audi</option><option>Lexus</option><option>Volvo</option>
+          <option>อื่นๆ</option>
+        </select>
+      </div>
+      <div class="field"><label>รุ่น</label>
+        <select id="model" onchange="autosave()">
+          <option value="">— เลือกยี่ห้อก่อน —</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>ปี (ค.ศ.)</label>
+        <select id="year" onchange="autosave()">
+          <option value="">— เลือกปี —</option>
+        </select>
+      </div>
+      <div class="field"><label>สี</label>
+        <select id="color" onchange="onColorChange()">
+          <option value="">— เลือกสี —</option>
+          <optgroup label="ขาว / เทา / เงิน / ดำ">
+            <option>ขาวมุก (Pearl White)</option>
+            <option>ขาวโซลิด (Solid White)</option>
+            <option>เงิน (Silver)</option>
+            <option>เทาเข้ม (Dark Gray)</option>
+            <option>เทาอ่อน (Light Gray)</option>
+            <option>ดำมุก (Pearl Black)</option>
+            <option>ดำโซลิด (Solid Black)</option>
+          </optgroup>
+          <optgroup label="แดง / ส้ม / เหลือง">
+            <option>แดง (Red)</option>
+            <option>แดงเข้ม (Dark Red / Maroon)</option>
+            <option>ส้ม (Orange)</option>
+            <option>เหลือง (Yellow)</option>
+          </optgroup>
+          <optgroup label="น้ำเงิน / เขียว / น้ำตาล">
+            <option>น้ำเงิน (Blue)</option>
+            <option>น้ำเงินเข้ม (Dark Blue / Navy)</option>
+            <option>ฟ้า (Light Blue)</option>
+            <option>เขียว (Green)</option>
+            <option>น้ำตาล (Brown / Bronze)</option>
+            <option>แชมเปญ (Champagne)</option>
+            <option>ครีม / เบจ (Beige)</option>
+          </optgroup>
+          <option value="อื่นๆ">อื่นๆ (ระบุเอง)</option>
+        </select>
+        <input id="color-custom" type="text" placeholder="ระบุสี..." oninput="autosave()"
+          style="display:none;margin-top:6px;width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:15px;font-family:var(--font);outline:none">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:flex-end">
+      <div class="field" style="flex:1;margin-bottom:12px">
+        <label>ทะเบียน</label>
+        <input id="plate" type="text" placeholder="กข 1234" oninput="autosave()">
+      </div>
+      <div class="field" style="flex:1;margin-bottom:12px">
+        <label>เลขไมล์ (กม.)</label>
+        <div style="display:flex;gap:8px">
+          <input id="mileage" type="number" placeholder="85000" inputmode="numeric"
+            oninput="autosave()" style="flex:1;min-width:0">
+          <label id="mileage-check-label-wrap" onclick="toggleMileageCheck()"
+            style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;flex-shrink:0;width:48px;height:44px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px;transition:all .2s">
+            <div id="mileage-check-box" style="font-size:18px;transition:all .2s;user-select:none;line-height:1">—</div>
+            <span id="mileage-check-text" style="font-size:9px;color:var(--muted);text-align:center;line-height:1">เช็คศูนย์</span>
+          </label>
+        </div>
+      </div>
+      <input type="hidden" id="mileage-verified" value="">
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">ข้อมูลลูกค้า</div>
+    <div class="field"><label>ชื่อลูกค้า</label><input id="customer" type="text" placeholder="ชื่อ-นามสกุล" oninput="autosave()"></div>
+    <div class="field"><label>เบอร์โทร</label><input id="phone" type="tel" placeholder="08x-xxx-xxxx" inputmode="tel" oninput="autosave()"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">รูปรถ (ภาพรวม)</div>
+    <div class="field-row">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px">ด้านหน้า</div>
+        <div class="photo-upload-area" id="car-front-area">
+          <input type="file" accept="image/*" onchange="previewCarPhoto(this,'car-front-area','car-front-data')">
+          <div class="upload-label"><span class="upload-icon">📷</span><span class="upload-text">ถ่ายรูป</span></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px">ด้านข้าง</div>
+        <div class="photo-upload-area" id="car-side-area">
+          <input type="file" accept="image/*" onchange="previewCarPhoto(this,'car-side-area','car-side-data')">
+          <div class="upload-label"><span class="upload-icon">📷</span><span class="upload-text">ถ่ายรูป</span></div>
+        </div>
+      </div>
+    </div>
+    <input type="hidden" id="car-front-data">
+    <input type="hidden" id="car-side-data">
+  </div>
+  <button class="btn btn-primary" onclick="goTo(1)">ถัดไป: วัดสี →</button>
+  <div style="margin-top:10px">
+    <button class="btn btn-secondary" onclick="newReport()">+ สร้างใบตรวจใหม่</button>
+  </div>
+</div>
+
+<div class="screen" id="screen-1">
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-title">จุดวัดความหนาสี</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">ถ่ายรูปเครื่องวัดขณะวัดแต่ละจุด → กรอกค่าไมครอน → ระบบแปลผลอัตโนมัติ</div>
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">เกณฑ์อ้างอิง</div>
+      <div style="display:flex;gap:12px;font-size:11px;flex-wrap:wrap">
+        <span style="color:var(--ok)">● 50–150 µm สีโรงงาน</span>
+        <span style="color:var(--warn)">● 121–200 µm ซ่อมสี</span>
+        <span style="color:var(--danger)">● >200 µm โป้ว/ซ่อมหนัก</span>
+      </div>
+    </div>
+  </div>
+  <div id="paint-points-container"></div>
+  <div class="card" style="margin-top:4px">
+    <div class="card-title">เพิ่มจุดวัด</div>
+    <div class="field-row">
+      <div class="field">
+        <label>เลือกชิ้นส่วน</label>
+        <select id="part-select">
+          <option value="">— เลือก —</option>
+          <option>ฝากระโปรงหน้า</option>
+          <option>บังโคลนหน้าซ้าย</option>
+          <option>ประตูหน้าซ้าย</option>
+          <option>ประตูหลังซ้าย</option>
+          <option>บังโคลนหน้าขวา</option>
+          <option>ประตูหน้าขวา</option>
+          <option>ประตูหลังขวา</option>
+          <option>ฝากระโปรงท้าย</option>
+          <option>หลังคา</option>
+          <option>เสา A ซ้าย</option>
+          <option>เสา A ขวา</option>
+          <option>เสา B ซ้าย</option>
+          <option>เสา B ขวา</option>
+          <option value="custom">กำหนดเอง...</option>
+        </select>
+      </div>
+      <div class="field" id="custom-part-wrap" style="display:none">
+        <label>ระบุชื่อ</label>
+        <input id="custom-part" type="text" placeholder="เช่น สปอยเลอร์">
+      </div>
+    </div>
+    <button class="btn btn-secondary" onclick="addPaintPoint()" style="margin-top:4px">+ เพิ่มจุดวัด</button>
+  </div>
+  <div class="btn-row" style="margin-top:8px">
+    <button class="btn btn-secondary" onclick="goTo(0)">← ย้อนกลับ</button>
+    <button class="btn btn-primary" onclick="goTo(2)">ห้องโดยสาร →</button>
+  </div>
+</div>
+
+<div class="screen" id="screen-2">
+  <div class="card">
+    <div class="card-title">ภายในห้องโดยสาร</div>
+    <div id="interior-items"></div>
+  </div>
+  <div class="btn-row" style="margin-top:4px">
+    <button class="btn btn-secondary" onclick="goTo(1)">← ย้อนกลับ</button>
+    <button class="btn btn-primary" onclick="goTo(3)">ห้องเครื่อง →</button>
+  </div>
+</div>
+
+<div class="screen" id="screen-3">
+  <div class="card">
+    <div class="card-title">ห้องเครื่องยนต์</div>
+    <div id="engine-items"></div>
+  </div>
+  <div class="btn-row" style="margin-top:4px">
+    <button class="btn btn-secondary" onclick="goTo(2)">← ย้อนกลับ</button>
+    <button class="btn btn-primary" onclick="goTo(4)">สรุปผล →</button>
+  </div>
+</div>
+
+<div class="screen" id="screen-4">
+  <div class="card">
+    <div class="score-wrap">
+      <div class="score-ring">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="46" fill="none" stroke="#22263a" stroke-width="10"/>
+          <circle id="score-arc" cx="55" cy="55" r="46" fill="none" stroke="#3dd68c" stroke-width="10"
+            stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round"/>
+        </svg>
+        <div class="score-center">
+          <div class="score-num" id="score-num">—</div>
+          <div class="score-label-text">คะแนน</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:13px;color:var(--muted);text-align:center" id="score-verdict">กรอกข้อมูลก่อน</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">สรุปผลการวัดสี</div>
+    <div id="summary-list"><div style="color:var(--muted);font-size:13px">ยังไม่มีข้อมูลการวัด</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">ภายในห้องโดยสาร</div>
+    <div id="interior-summary"><div style="color:var(--muted);font-size:13px">ยังไม่ได้ตรวจ</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">ห้องเครื่องยนต์</div>
+    <div id="engine-summary"><div style="color:var(--muted);font-size:13px">ยังไม่ได้ตรวจ</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">ความเห็นผู้ตรวจ</div>
+    <div class="field">
+      <textarea id="inspector-note" placeholder="สรุปภาพรวมสภาพตัวถัง ข้อสังเกต คำแนะนำสำหรับลูกค้า..." oninput="autosave()"></textarea>
+    </div>
+    <div class="field">
+      <label>ชื่อผู้ตรวจ</label>
+      <input id="inspector-name" type="text" placeholder="ชื่อช่างผู้ตรวจ" oninput="autosave()">
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goTo(3)">← ย้อนกลับ</button>
+    <button class="btn btn-primary" onclick="saveAndReport()">บันทึก + รายงาน →</button>
+  </div>
+</div>
+
+<div class="screen" id="screen-5">
+  <div class="card">
+    <div class="card-title">ตัวอย่างรายงาน</div>
+    <div id="pdf-preview"></div>
+  </div>
+  <button class="btn btn-primary" onclick="exportPDF()" style="margin-bottom:10px">⬇️ บันทึก / พิมพ์ PDF</button>
+  <button class="btn btn-secondary" onclick="shareReport()">📤 แชร์ / ส่ง LINE</button>
+  <button class="btn btn-secondary" style="margin-top:10px" onclick="goTo(4)">← แก้ไข</button>
+</div>
+
+<div class="screen" id="screen-6">
+  <input class="search-box" id="hist-search" type="text" placeholder="🔍 ค้นหาตามทะเบียน ยี่ห้อ รุ่น ลูกค้า..." oninput="renderHistory()">
+  <div class="hist-count" id="hist-count"></div>
+  <div id="history-list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== State =====
+let currentScreen = 0;
+let paintPoints = [];
+let currentId = null;
+let autosaveTimer = null;
+
+// ===== Storage helpers =====
+const STORAGE_KEY = 'paint_inspections_v1';
+
+function getAllReports() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+function saveAllReports(reports) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+}
+
+function getCurrentData() {
+  return {
+    id: currentId,
+    reportId: document.getElementById('report-id-display').textContent,
+    savedAt: new Date().toISOString(),
+    brand: v('brand'), model: v('model'), year: v('year'), color: getColorValue(),
+    plate: v('plate'), mileage: v('mileage'), mileageVerified: document.getElementById('mileage-verified')?.value||'', customer: v('customer'), phone: v('phone'),
+    inspectorName: v('inspector-name'), inspectorNote: v('inspector-note'),
+    carFront: document.getElementById('car-front-data').value,
+    carSide: document.getElementById('car-side-data').value,
+    paintPoints: paintPoints, interiorData: interiorData, engineData: engineData,
+    score: calcScore(paintPoints, interiorData, engineData).total
+  };
+}
+
+function loadData(data) {
+  currentId = data.id;
+  document.getElementById('report-id-display').textContent = data.reportId;
+  setV('brand', data.brand); setV('model', data.model);
+  setV('year', data.year); setV('color', data.color);
+  setV('plate', data.plate); setV('mileage', data.mileage); restoreMileageCheck(data.mileageVerified||'');
+  setV('customer', data.customer); setV('phone', data.phone);
+  setV('inspector-name', data.inspectorName || '');
+  setV('inspector-note', data.inspectorNote || '');
+  document.getElementById('car-front-data').value = data.carFront || '';
+  document.getElementById('car-side-data').value = data.carSide || '';
+  if (data.carFront) restoreCarPhoto('car-front-area', 'car-front-data', data.carFront);
+  if (data.carSide) restoreCarPhoto('car-side-area', 'car-side-data', data.carSide);
+  paintPoints = data.paintPoints || [];
+  interiorData = data.interiorData || {};
+  engineData = data.engineData || {};
+  renderPaintPoints();
+  renderInspectionSection(INTERIOR_ITEMS, interiorData, INTERIOR_STATUS, 'interior-items');
+  renderInspectionSection(ENGINE_ITEMS, engineData, ENGINE_STATUS, 'engine-items');
+}
+
+function restoreCarPhoto(areaId, hiddenId, dataUrl) {
+  const area = document.getElementById(areaId);
+  area.innerHTML = `<img src="${dataUrl}" class="photo-preview">
+    <button class="photo-clear" onclick="clearPhoto('${areaId}','${hiddenId}')">✕</button>`;
+  document.getElementById(hiddenId).value = dataUrl;
+}
+
+// ===== Autosave =====
+function autosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    const data = getCurrentData();
+    const reports = getAllReports();
+    const idx = reports.findIndex(r => r.id === currentId);
+    if (idx >= 0) reports[idx] = data;
+    else reports.unshift(data);
+    saveAllReports(reports);
+    const ind = document.getElementById('save-indicator');
+    ind.classList.add('show');
+    setTimeout(() => ind.classList.remove('show'), 1500);
+  }, 800);
+}
+
+function saveAndReport() {
+  autosave();
+  goTo(5);
+  generatePDFPreview();
+}
+
+// ===== New report =====
+function newReport() {
+  if (!confirm('เริ่มใบตรวจใหม่? ข้อมูลปัจจุบันถูกบันทึกแล้ว')) return;
+  autosave();
+  currentId = 'r_' + Date.now();
+  const rid = 'INS-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*9000)+1000);
+  document.getElementById('report-id-display').textContent = rid;
+  ['brand','model','year','color','plate','mileage','customer','phone','inspector-name','inspector-note'].forEach(id => setV(id,'')); restoreMileageCheck('');
+  document.getElementById('car-front-data').value = '';
+  document.getElementById('car-side-data').value = '';
+  clearPhoto('car-front-area','car-front-data');
+  clearPhoto('car-side-area','car-side-data');
+  paintPoints = [];
+  interiorData = {};
+  engineData = {};
+  renderPaintPoints();
+  renderInspectionSection(INTERIOR_ITEMS, interiorData, INTERIOR_STATUS, 'interior-items');
+  renderInspectionSection(ENGINE_ITEMS, engineData, ENGINE_STATUS, 'engine-items');
+  goTo(0);
+  showToast('📋 ใบตรวจใหม่พร้อมแล้ว');
+}
+
+// ===== Navigation =====
+function goTo(i) {
+  document.querySelectorAll('.screen').forEach((s,si) => s.classList.toggle('active', si===i));
+  document.querySelectorAll('.step-pill').forEach((p,pi) => {
+    p.classList.remove('active','done');
+    if (pi===i) p.classList.add('active');
+    else if (pi<i) p.classList.add('done');
+  });
+  currentScreen = i;
+  if (i===4) buildSummary();
+  if (i===6) renderHistory();
+  window.scrollTo(0,0);
+}
+
+// ===== History =====
+function renderHistory() {
+  const q = (document.getElementById('hist-search').value || '').toLowerCase();
+  const all = getAllReports();
+  const filtered = q ? all.filter(r =>
+    (r.plate||'').toLowerCase().includes(q) ||
+    (r.brand||'').toLowerCase().includes(q) ||
+    (r.model||'').toLowerCase().includes(q) ||
+    (r.customer||'').toLowerCase().includes(q)
+  ) : all;
+
+  document.getElementById('hist-count').textContent =
+    filtered.length ? `${filtered.length} รายการ` : '';
+
+  const list = document.getElementById('history-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🚗</div>
+      <div class="empty-text">${q ? 'ไม่พบผลการค้นหา' : 'ยังไม่มีประวัติการตรวจ\nกรอกข้อมูลแล้วกด "บันทึก + รายงาน"'}</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(r => {
+    const score = r.score || 0;
+    const scoreColor = score >= 80 ? 'var(--ok)' : score >= 55 ? 'var(--warn)' : 'var(--danger)';
+    const date = r.savedAt ? new Date(r.savedAt).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}) : '—';
+    const pts = r.paintPoints || [];
+    const nOk = pts.filter(p=>{ const v=parseFloat(p.micron); return v>=80&&v<=120; }).length;
+    const nWarn = pts.filter(p=>{ const v=parseFloat(p.micron); return v>120&&v<=200; }).length;
+    const nDanger = pts.filter(p=>{ const v=parseFloat(p.micron); return v>200; }).length;
+
+    return `<div class="hist-item">
+      <div class="hist-top">
+        <div>
+          <div class="hist-car">${r.brand||'—'} ${r.model||''} ${r.year||''}</div>
+          <div class="hist-meta">
+            🚘 ${r.plate||'ไม่ระบุทะเบียน'} &nbsp;·&nbsp; 👤 ${r.customer||'—'}<br>
+            📅 ${date} &nbsp;·&nbsp; ${r.reportId||''}
+          </div>
+        </div>
+        ${score ? `<div class="hist-score" style="color:${scoreColor}">${score}</div>` : ''}
+      </div>
+      ${pts.length ? `<div class="hist-tags">
+        ${nOk ? `<span class="hist-tag badge-ok">✓ โรงงาน ${nOk}</span>` : ''}
+        ${nWarn ? `<span class="hist-tag badge-warn">⚠ ซ่อมสี ${nWarn}</span>` : ''}
+        ${nDanger ? `<span class="hist-tag badge-danger">● โป้วหนา ${nDanger}</span>` : ''}
+        <span style="font-size:11px;color:var(--muted);align-self:center">${pts.length} จุด</span>
+      </div>` : ''}
+      <div class="hist-actions">
+        <button class="hist-btn hist-btn-open" onclick="openReport('${r.id}')">✏️ เปิด/แก้ไข</button>
+        <button class="hist-btn hist-btn-pdf" onclick="quickPDF('${r.id}')">⬇️ PDF</button>
+        <button class="hist-btn hist-btn-del" onclick="deleteReport('${r.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openReport(id) {
+  const reports = getAllReports();
+  const r = reports.find(x => x.id === id);
+  if (!r) return;
+  loadData(r);
+  goTo(0);
+  showToast('เปิดใบตรวจ ' + (r.plate || r.reportId));
+}
+
+function deleteReport(id) {
+  if (!confirm('ลบรายการนี้ออกจากประวัติ?')) return;
+  const reports = getAllReports().filter(r => r.id !== id);
+  saveAllReports(reports);
+  renderHistory();
+  showToast('ลบแล้ว');
+}
+
+async function quickPDF(id) {
+  const reports = getAllReports();
+  const r = reports.find(x => x.id === id);
+  if (!r) return;
+  const prevId = currentId;
+  loadData(r);
+  goTo(5);
+  generatePDFPreview();
+  await exportPDF();
+  const cur = reports.find(x => x.id === prevId);
+  if (cur) loadData(cur);
+}
+
+// ===== Photo helpers =====
+function previewCarPhoto(input, areaId, hiddenId) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    compressImage(e.target.result, 1200, 0.75, compressed => {
+      restoreCarPhoto(areaId, hiddenId, compressed);
+      autosave();
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPhoto(areaId, hiddenId) {
+  document.getElementById(hiddenId).value = '';
+  const area = document.getElementById(areaId);
+  area.innerHTML = `<input type="file" accept="image/*" onchange="previewCarPhoto(this,'${areaId}','${hiddenId}')">
+    <div class="upload-label"><span class="upload-icon">📷</span><span class="upload-text">ถ่ายรูป</span></div>`;
+}
+
+// ===== Part select =====
+document.getElementById('part-select').addEventListener('change', function() {
+  document.getElementById('custom-part-wrap').style.display = this.value==='custom' ? 'block' : 'none';
+});
+
+// ===== Paint points =====
+function addPaintPoint() {
+  const sel = document.getElementById('part-select');
+  let partName = sel.value;
+  if (!partName) { showToast('เลือกชิ้นส่วนก่อน'); return; }
+  if (partName === 'custom') {
+    partName = document.getElementById('custom-part').value.trim();
+    if (!partName) { showToast('กรอกชื่อชิ้นส่วน'); return; }
+  }
+  const id = 'pp-' + Date.now();
+  paintPoints.push({ id, part: partName, micron: '', photo: '', note: '' });
+  renderPaintPoints();
+  autosave();
+  sel.value = '';
+  document.getElementById('custom-part-wrap').style.display = 'none';
+  document.getElementById('custom-part').value = '';
+  setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior:'smooth', block:'center' }), 100);
+}
+
+function renderPaintPoints() {
+  const container = document.getElementById('paint-points-container');
+  if (!paintPoints.length) {
+    container.innerHTML = `<div class="card" style="text-align:center;color:var(--muted);font-size:13px;padding:24px">กดปุ่ม "+ เพิ่มจุดวัด" เพื่อเริ่มต้น</div>`;
+    return;
+  }
+  container.innerHTML = paintPoints.map((p,idx) => {
+    const badge = getBadge(p.micron);
+    return `<div class="paint-point" id="${p.id}">
+      <div class="paint-point-header">
+        <div class="paint-part-name">${p.part}</div>
+        <div class="paint-badge ${badge.cls}">${badge.label}</div>
+      </div>
+      <div class="paint-input-row">
+        <input class="micron-input" type="number" inputmode="decimal" placeholder="—" value="${p.micron}"
+          oninput="updateMicronLive(${idx},this)" style="border-color:${badge.color}">
+        <span class="micron-unit">µm<br><span style="font-size:10px;opacity:.6">ไมครอน</span></span>
+      </div>
+      <div class="result-bar"><div class="result-fill" style="width:${getBarWidth(p.micron)}%;background:${badge.color}"></div></div>
+      ${p.micron ? `<div style="font-size:12px;color:${badge.color};margin-bottom:8px">${badge.desc}</div>` : ''}
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px">รูปเครื่องวัด</div>
+      <div class="photo-upload-area" id="photo-area-${idx}" style="margin-bottom:8px">
+        ${p.photo
+          ? `<img src="${p.photo}" class="photo-preview"><button class="photo-clear" onclick="clearPaintPhoto(${idx})">✕</button>`
+          : `<input type="file" accept="image/*" onchange="setPaintPhoto(${idx},this)">
+             <div class="upload-label"><span class="upload-icon">📷</span><span class="upload-text">ถ่ายรูปเครื่องวัด</span></div>`
+        }
+      </div>
+      <textarea class="mini-note" placeholder="หมายเหตุ..." oninput="updateNote(${idx},this.value)">${p.note}</textarea>
+      <button onclick="removePoint(${idx})" style="margin-top:8px;background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0">✕ ลบจุดนี้</button>
+    </div>`;
+  }).join('');
+}
+
+function getBadge(micron) {
+  const val = parseFloat(micron);
+  if (!micron||isNaN(val)) return {cls:'badge-empty',label:'ยังไม่ได้วัด',color:'#8b8fa8',desc:''};
+  if (val<50)   return {cls:'badge-warn',  label:'สีบาง',     color:'#f5a623',desc:`${val} µm — สีบางกว่าปกติ อาจเคยขัดออก`};
+  if (val<=150) return {cls:'badge-ok',    label:'สีโรงงาน', color:'#3dd68c',desc:`${val} µm — อยู่ในเกณฑ์มาตรฐานโรงงาน ✓`};
+  if (val<=200) return {cls:'badge-warn',  label:'ซ่อมสี',   color:'#f5a623',desc:`${val} µm — เกินมาตรฐาน เคยพ่นสีซ่อม`};
+  if (val<=400) return {cls:'badge-danger',label:'โป้วหนา',  color:'#ff5c5c',desc:`${val} µm — หนามาก มีการโป้วปูน/ซ่อมหนัก`};
+  return {cls:'badge-danger',label:'โป้วหนักมาก',color:'#ff5c5c',desc:`${val} µm — โป้วหนักมาก ควรตรวจสอบโครงสร้าง`};
+}
+
+function getBarWidth(micron) {
+  const val = parseFloat(micron);
+  return (!val||isNaN(val)) ? 0 : Math.min(100,Math.round((val/500)*100));
+}
+
+function calcScore(points, interior, engine) {
+  points = points || [];
+  interior = interior || {};
+  engine = engine || {};
+
+  let paintScore = null;
+  const paintFilled = points.filter(p=>p.micron);
+  if (paintFilled.length > 0) {
+    let total = 0;
+    paintFilled.forEach(p => {
+      const val = parseFloat(p.micron);
+      if (val >= 50 && val <= 150) total += 100;
+      else if (val >= 0 && val <= 49) total += 80;
+      else if (val >= 151 && val <= 200) total += 70;
+      else if (val >= 201 && val <= 400) total += 40;
+      else total += 0;
+    });
+    paintScore = Math.round(total / paintFilled.length);
+  }
+
+  let interiorScore = null;
+  const intFilled = Object.values(interior).filter(d => d.status);
+  if (intFilled.length > 0) {
+    let total = 0;
+    intFilled.forEach(d => {
+      const s = d.status;
+      if (s === 'ปกติ' || s === 'เย็น') total += 100;
+      else if (s === 'รอยขีดข่วน' || s === 'คราบสกปรก') total += 80;
+      else if (s === 'รอยบุบ') total += 60;
+      else if (s === 'แตก/หัก' || s === 'ไม่เย็น') total += 30;
+      else if (s === 'ต้องเปลี่ยน') total += 0;
+    });
+    interiorScore = Math.round(total / intFilled.length);
+  }
+
+  let engineScore = null;
+  const engFilled = Object.values(engine).filter(d => d.status);
+  if (engFilled.length > 0) {
+    let total = 0;
+    engFilled.forEach(d => {
+      const s = d.status;
+      if (s === 'ปกติ') total += 100;
+      else if (s === 'ต้องเติม') total += 80;
+      else if (s === 'รั่วซึม') total += 40;
+      else if (s === 'ต้องซ่อม') total += 20;
+      else if (s === 'ต้องเปลี่ยน') total += 0;
+    });
+    engineScore = Math.round(total / engFilled.length);
+  }
+
+  let finalScore = 0;
+  let totalWeight = 0;
+  
+  if (paintScore !== null) { finalScore += paintScore * 0.5; totalWeight += 0.5; }
+  if (engineScore !== null) { finalScore += engineScore * 0.3; totalWeight += 0.3; }
+  if (interiorScore !== null) { finalScore += interiorScore * 0.2; totalWeight += 0.2; }
+
+  const total = totalWeight > 0 ? Math.round(finalScore / totalWeight) : 0;
+
+  return { total, paint: paintScore, interior: interiorScore, engine: engineScore };
+}
+
+function updateMicronLive(idx, input) {
+  const val = input.value;
+  paintPoints[idx].micron = val;
+  const point = paintPoints[idx];
+  const b = getBadge(val);
+  const container = document.getElementById(point.id);
+  if (container) {
+    const badge = container.querySelector('.paint-badge');
+    if (badge) { badge.className = 'paint-badge ' + b.cls; badge.textContent = b.label; }
+    input.style.borderColor = b.color;
+    const fill = container.querySelector('.result-fill');
+    if (fill) { fill.style.width = getBarWidth(val) + '%'; fill.style.background = b.color; }
+    let desc = container.querySelector('.micron-desc');
+    if (val) {
+      if (!desc) {
+        desc = document.createElement('div');
+        desc.className = 'micron-desc';
+        desc.style.cssText = 'font-size:12px;margin-bottom:8px';
+        container.querySelector('.result-bar').insertAdjacentElement('afterend', desc);
+      }
+      desc.style.color = b.color;
+      desc.textContent = b.desc;
+    } else if (desc) { desc.remove(); }
+  }
+  clearTimeout(window._micronTimer);
+  window._micronTimer = setTimeout(() => { autosave(); }, 800);
+}
+function updateNote(idx,val) { paintPoints[idx].note=val; autosave(); }
+
+function setPaintPhoto(idx,input) {
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    compressImage(e.target.result, 1200, 0.75, compressed => {
+      paintPoints[idx].photo=compressed; renderPaintPoints(); autosave();
+    });
+  };
+  reader.readAsDataURL(file);
+}
+function clearPaintPhoto(idx) { paintPoints[idx].photo=''; renderPaintPoints(); autosave(); }
+function removePoint(idx) { paintPoints.splice(idx,1); renderPaintPoints(); autosave(); }
+
+// ===== Summary =====
+function buildSummary() {
+  const list=document.getElementById('summary-list');
+  if (!paintPoints.length) {
+    list.innerHTML='<div style="color:var(--muted);font-size:13px">ยังไม่มีข้อมูลการวัด</div>';
+  } else {
+    list.innerHTML=paintPoints.map(p=>{
+      const badge=getBadge(p.micron);
+      return `<div class="summary-row">
+        <span class="summary-label">${p.part}</span>
+        <span class="summary-val" style="color:${badge.color}">${p.micron?p.micron+' µm':'—'} <span style="font-size:11px">${badge.label}</span></span>
+      </div>`;
+    }).join('');
+  }
+  
+  const intSummary = document.getElementById('interior-summary');
+  const engSummary = document.getElementById('engine-summary');
+
+  if (intSummary) {
+    const intFilled = Object.entries(interiorData).filter(([,d]) => d.status);
+    intSummary.innerHTML = intFilled.length ? intFilled.map(([id, d]) => {
+      const item = INTERIOR_ITEMS.find(x => x.id === id);
+      const isBad = d.status !== 'ปกติ' && d.status !== 'เย็น';
+      return `<div class="summary-row">
+        <span class="summary-label">${item ? item.icon+' '+item.label : id}</span>
+        <span class="summary-val" style="color:${isBad?'var(--danger)':'var(--ok)'}">${d.status}</span>
+      </div>`;
+    }).join('') : '<div style="color:var(--muted);font-size:13px">ยังไม่ได้ตรวจ</div>';
+  }
+
+  if (engSummary) {
+    const engFilled = Object.entries(engineData).filter(([,d]) => d.status);
+    engSummary.innerHTML = engFilled.length ? engFilled.map(([id, d]) => {
+      const item = ENGINE_ITEMS.find(x => x.id === id);
+      const isOk = d.status === 'ปกติ';
+      return `<div class="summary-row">
+        <span class="summary-label">${item ? item.icon+' '+item.label : id}</span>
+        <span class="summary-val" style="color:${isOk?'var(--ok)':'var(--danger)'}">${d.status}</span>
+      </div>`;
+    }).join('') : '<div style="color:var(--muted);font-size:13px">ยังไม่ได้ตรวจ</div>';
+  }
+
+  updateScoreUI(calcScore(paintPoints, interiorData, engineData));
+}
+
+function updateScoreUI(scoreObj) {
+  const score = scoreObj.total;
+  const el=document.getElementById('score-num');
+  const arc=document.getElementById('score-arc');
+  if (!score) { 
+    el.textContent='—'; arc.style.strokeDashoffset=289; 
+    document.getElementById('score-verdict').innerHTML='ตรวจอย่างน้อย 1 รายการเพื่อคำนวณคะแนน'; 
+    return; 
+  }
+  el.textContent=score;
+  arc.style.strokeDashoffset=289-(289*score/100);
+  arc.style.stroke=score>=80?'#3dd68c':score>=55?'#f5a623':'#ff5c5c';
+  
+  let verdictText = score>=80?'✅ สภาพดี — ผ่านเกณฑ์มาตรฐาน':
+                    score>=55?'⚠️ พอใช้ — พบตำหนิหรือจุดต้องซ่อม':
+                    '🔴 ควรตรวจเพิ่ม — พบการซ่อมหนักหรือชำรุดหลายจุด';
+                    
+  let detailsHtml = `<div style="display:flex;gap:12px;justify-content:center;margin-top:10px">`;
+  if (scoreObj.paint !== null) detailsHtml += `<div style="background:var(--surface2);padding:4px 10px;border-radius:12px;font-size:11px">สี: <strong style="color:${scoreObj.paint>=80?'var(--ok)':scoreObj.paint>=55?'var(--warn)':'var(--danger)'}">${scoreObj.paint}</strong></div>`;
+  if (scoreObj.engine !== null) detailsHtml += `<div style="background:var(--surface2);padding:4px 10px;border-radius:12px;font-size:11px">เครื่อง: <strong style="color:${scoreObj.engine>=80?'var(--ok)':scoreObj.engine>=55?'var(--warn)':'var(--danger)'}">${scoreObj.engine}</strong></div>`;
+  if (scoreObj.interior !== null) detailsHtml += `<div style="background:var(--surface2);padding:4px 10px;border-radius:12px;font-size:11px">ภายใน: <strong style="color:${scoreObj.interior>=80?'var(--ok)':scoreObj.interior>=55?'var(--warn)':'var(--danger)'}">${scoreObj.interior}</strong></div>`;
+  detailsHtml += `</div>`;
+  
+  document.getElementById('score-verdict').innerHTML = `<div>${verdictText}</div>${detailsHtml}`;
+}
+
+// ===== PDF Preview Generator =====
+function generatePDFPreview() {
+  const now=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+  const rid=document.getElementById('report-id-display').textContent;
+  const colorVal = getColorValue();
+  let html=`<div style="text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #e8c547">
+    <div style="font-size:20px;font-weight:800;color:#111">ใบตรวจสภาพตัวถังและภายใน</div>
+    <div style="font-size:13px;color:#666;margin-top:2px">Paint Thickness & General Inspection Report</div>
+    <div style="font-size:12px;color:#b8940a;font-weight:600;margin-top:4px">${rid}</div>
+  </div>
+  <div class="pdf-section-head">ข้อมูลรถและลูกค้า</div>
+  <div class="pdf-row"><span class="pdf-key">รถ</span><span class="pdf-val">${v('brand')} ${v('model')} ปี ค.ศ.${v('year')} สี ${colorVal}</span></div>
+  <div class="pdf-row"><span class="pdf-key">ทะเบียน</span><span class="pdf-val">${v('plate')}</span></div>
+  <div class="pdf-row"><span class="pdf-key">เลขไมล์</span><span class="pdf-val">${(()=>{
+    const m=v('mileage'); const verified=document.getElementById('mileage-verified')?.value||'';
+    const badge = verified==='match' ? ' <span style="color:#1a7a4a;font-weight:700">✅ ตรงกับศูนย์</span>'
+                : verified==='mismatch' ? ' <span style="color:#a02020;font-weight:700">❌ ไม่ตรงกับศูนย์</span>' : '';
+    return (m?Number(m).toLocaleString()+' กม.':'—') + badge;
+  })()}</span></div>
+  <div class="pdf-row"><span class="pdf-key">ลูกค้า</span><span class="pdf-val">${v('customer')}</span></div>
+  <div class="pdf-row"><span class="pdf-key">โทรศัพท์</span><span class="pdf-val">${v('phone')||'—'}</span></div>
+  <div class="pdf-row"><span class="pdf-key">วันที่ตรวจ</span><span class="pdf-val">${now}</span></div>
+  <div class="pdf-row"><span class="pdf-key">ผู้ตรวจ</span><span class="pdf-val">${v('inspector-name')||'—'}</span></div>`;
+  
+  if (paintPoints.length) {
+    html+=`<div class="pdf-section-head" style="margin-top:16px">ผลการวัดความหนาสีแต่ละจุด (${paintPoints.length} จุด)</div>`;
+    paintPoints.forEach(p=>{
+      const b=getBadge(p.micron);
+      const printColor = b.cls==='badge-ok'?'#1a7a4a': b.cls==='badge-warn'?'#a06000':'#a02020';
+      const printBg = b.cls==='badge-ok'?'#e8f9f0': b.cls==='badge-warn'?'#fff8e8':'#ffeaea';
+      html+=`<div style="border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:10px;page-break-inside:avoid">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:14px;font-weight:700;color:#111">${p.part}</span>
+          <span style="font-size:14px;font-weight:800;color:${printColor};background:${printBg};padding:3px 10px;border-radius:6px">${p.micron?p.micron+' µm':'—'}</span>
+        </div>
+        <div style="font-size:12px;color:${printColor};margin-bottom:${p.photo||p.note?'8px':'0'}">${b.desc||'—'}</div>
+        ${p.photo?`<img src="${p.photo}">`:``}
+        ${p.note?`<div style="font-size:12px;color:#666;margin-top:4px">📝 ${p.note}</div>`:''}
+      </div>`;
+    });
+  }
+
+  const intFilled = Object.entries(interiorData).filter(([,d]) => d.status);
+  if (intFilled.length) {
+    html += `<div class="pdf-section-head" style="margin-top:16px">ภายในห้องโดยสาร</div>`;
+    intFilled.forEach(([id, d]) => {
+      const item = INTERIOR_ITEMS.find(x => x.id === id);
+      const isBad = d.status !== 'ปกติ' && d.status !== 'เย็น';
+      const pc = isBad ? '#a02020' : '#1a7a4a';
+      const pb = isBad ? '#ffeaea' : '#e8f9f0';
+      html += `<div style="border:1px solid #ddd;border-radius:8px;padding:10px 12px;margin-bottom:8px;page-break-inside:avoid">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${d.photo||d.note?'8px':'0'}">
+          <span style="font-size:13px;font-weight:600;color:#111">${item?item.icon+' '+item.label:id}</span>
+          <span style="font-size:12px;font-weight:700;color:${pc};background:${pb};padding:2px 8px;border-radius:6px">${d.status}</span>
+        </div>
+        ${d.photo?`<img src="${d.photo}">`:``}
+        ${d.note?`<div style="font-size:12px;color:#666;margin-top:4px">📝 ${d.note}</div>`:''}
+      </div>`;
+    });
+  }
+
+  const engFilled = Object.entries(engineData).filter(([,d]) => d.status);
+  if (engFilled.length) {
+    html += `<div class="pdf-section-head" style="margin-top:16px">ห้องเครื่องยนต์</div>`;
+    engFilled.forEach(([id, d]) => {
+      const item = ENGINE_ITEMS.find(x => x.id === id);
+      const isOk = d.status === 'ปกติ';
+      const pc = isOk ? '#1a7a4a' : '#a02020';
+      const pb = isOk ? '#e8f9f0' : '#ffeaea';
+      html += `<div style="border:1px solid #ddd;border-radius:8px;padding:10px 12px;margin-bottom:8px;page-break-inside:avoid">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${d.photo||d.note?'8px':'0'}">
+          <span style="font-size:13px;font-weight:600;color:#111">${item?item.icon+' '+item.label:id}</span>
+          <span style="font-size:12px;font-weight:700;color:${pc};background:${pb};padding:2px 8px;border-radius:6px">${d.status}</span>
+        </div>
+        ${d.photo?`<img src="${d.photo}">`:``}
+        ${d.note?`<div style="font-size:12px;color:#666;margin-top:4px">📝 ${d.note}</div>`:''}
+      </div>`;
+    });
+  }
+
+  const note=v('inspector-note');
+  const scoreObj=calcScore(paintPoints, interiorData, engineData);
+  const score=scoreObj.total;
+  if (score) {
+    let detailsStr = [];
+    if (scoreObj.paint !== null) detailsStr.push(`สี: ${scoreObj.paint}`);
+    if (scoreObj.engine !== null) detailsStr.push(`เครื่อง: ${scoreObj.engine}`);
+    if (scoreObj.interior !== null) detailsStr.push(`ภายใน: ${scoreObj.interior}`);
+    
+    html+=`<div style="margin:16px 0 8px;padding:12px;background:#f5f5f5;border-radius:8px;display:flex;align-items:center;gap:12px;page-break-inside:avoid">
+      <div style="font-size:28px;font-weight:800;color:${score>=80?'#1a7a4a':score>=55?'#a06000':'#a02020'}">${score}</div>
+      <div><div style="font-size:13px;font-weight:600">คะแนนสภาพรถโดยรวม <span style="font-weight:400;color:#666;font-size:11px;margin-left:8px">(${detailsStr.join(' | ')})</span></div>
+      <div style="font-size:12px;color:#666">${score>=80?'สภาพดี — ผ่านเกณฑ์มาตรฐาน':score>=55?'พอใช้ — พบตำหนิหรือจุดต้องซ่อม':'ควรตรวจเพิ่ม — พบการซ่อมหนักหรือชำรุดหลายจุด'}</div></div>
+    </div>`;
+  }
+  if (note) html+=`<div class="pdf-section-head">ความเห็นผู้ตรวจ</div><div style="font-size:13px;line-height:1.8;color:#111;padding:8px 0">${note}</div>`;
+  html+=`<div style="margin-top:20px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#aaa;text-align:center">สร้างด้วยระบบตรวจสภาพรถส่วนตัว  •  ${now}</div>`;
+  document.getElementById('pdf-preview').innerHTML=html;
+}
+
+async function exportPDF() {
+  generatePDFPreview();
+  await new Promise(r => setTimeout(r, 100));
+  const imgs = document.querySelectorAll('#pdf-preview img');
+  if (imgs.length) {
+    await Promise.all(Array.from(imgs).map(img =>
+      img.complete ? Promise.resolve() : new Promise(r => { img.onload=r; img.onerror=r; })
+    ));
+  }
+  await new Promise(r => setTimeout(r, 300));
+  window.print();
+}
+
+function shareReport(){
+  if(navigator.share){navigator.share({title:'ใบตรวจสภาพรถ',text:'รายงานการตรวจความหนาสีรถ'}).catch(()=>{})}
+  else showToast('กด "บันทึก PDF" แล้วส่งทาง LINE ได้เลย');
+}
+
+// ===== Utils =====
+function v(id){return document.getElementById(id)?.value?.trim()||''}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function onColorChange() {
+  const sel = document.getElementById('color');
+  const custom = document.getElementById('color-custom');
+  if (sel.value === 'อื่นๆ') {
+    custom.style.display = 'block';
+    custom.focus();
+  } else {
+    custom.style.display = 'none';
+    custom.value = '';
+  }
+  autosave();
+}
+
+function getColorValue() {
+  const sel = document.getElementById('color');
+  if (!sel) return '';
+  if (sel.value === 'อื่นๆ') return document.getElementById('color-custom')?.value?.trim() || 'อื่นๆ';
+  return sel.value || '';
+}
+
+function toggleMileageCheck() {
+  const states = ['', 'match', 'mismatch'];
+  const box = document.getElementById('mileage-check-box');
+  const text = document.getElementById('mileage-check-text');
+  const wrap = document.getElementById('mileage-check-label-wrap');
+  const hidden = document.getElementById('mileage-verified');
+  const cur = hidden.value;
+  const next = states[(states.indexOf(cur) + 1) % states.length];
+  hidden.value = next;
+  if (next === 'match') {
+    box.textContent = '✅';
+    wrap.style.background = 'rgba(61,214,140,.15)';
+    wrap.style.borderColor = 'var(--ok)';
+    text.textContent = 'ตรง';
+    text.style.color = 'var(--ok)';
+  } else if (next === 'mismatch') {
+    box.textContent = '❌';
+    wrap.style.background = 'rgba(255,92,92,.15)';
+    wrap.style.borderColor = 'var(--danger)';
+    text.textContent = 'ไม่ตรง';
+    text.style.color = 'var(--danger)';
+  } else {
+    box.textContent = '—';
+    wrap.style.background = 'var(--surface2)';
+    wrap.style.borderColor = 'var(--border)';
+    text.textContent = 'เช็คศูนย์';
+    text.style.color = 'var(--muted)';
+  }
+  autosave();
+}
+
+function restoreMileageCheck(val) {
+  if (!val) return;
+  document.getElementById('mileage-verified').value = '';
+  const states = ['', 'match', 'mismatch'];
+  const times = states.indexOf(val);
+  for (let i = 0; i < times; i++) toggleMileageCheck();
+}
+
+function populateYearDropdown() {
+  const sel = document.getElementById('year');
+  if (!sel) return;
+  const current = new Date().getFullYear();
+  for (let y = current; y >= 1980; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    sel.appendChild(opt);
+  }
+}
+
+// ===== Image Compression =====
+function compressImage(dataUrl, maxWidth, quality, callback) {
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    let w = img.width, h = img.height;
+    if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', quality));
+  };
+  img.src = dataUrl;
+}
+
+// ===== Interior & Engine State =====
+const INTERIOR_ITEMS = [
+  {id:'seat_driver', label:'เบาะคนขับ', icon:'🪑'},
+  {id:'seat_passenger', label:'เบาะผู้โดยสาร', icon:'🪑'},
+  {id:'seat_rear', label:'เบาะหลัง', icon:'🪑'},
+  {id:'steering', label:'พวงมาลัย', icon:'🎡'},
+  {id:'console', label:'คอนโซลหน้า', icon:'📟'},
+  {id:'door_panel', label:'แผงประตู', icon:'🚪'},
+  {id:'ceiling', label:'เพดาน', icon:'⬆️'},
+  {id:'carpet', label:'พรม / พื้น', icon:'▭'},
+  {id:'screen', label:'หน้าจอ / Infotainment', icon:'📱'},
+  {id:'audio', label:'วิทยุ / ระบบเสียง', icon:'🔊'},
+  {id:'camera', label:'กล้องถอยหลัง', icon:'📷'},
+  {id:'sensor', label:'เซ็นเซอร์ถอย', icon:'📡'},
+  {id:'aircon', label:'ระบบแอร์', icon:'❄️'},
+];
+
+const ENGINE_ITEMS = [
+  {id:'engine_sound', label:'เครื่องยนต์ (เสียง/สั่น)', icon:'🔧'},
+  {id:'battery', label:'แบตเตอรี่', icon:'🔋'},
+  {id:'engine_oil', label:'น้ำมันเครื่อง', icon:'🛢️'},
+  {id:'coolant', label:'น้ำหล่อเย็น', icon:'💧'},
+  {id:'brake_fluid', label:'น้ำมันเบรก', icon:'🔴'},
+  {id:'power_steering', label:'น้ำมันพวงมาลัยเพาเวอร์', icon:'💧'},
+  {id:'belt', label:'สายพาน', icon:'⚙️'},
+  {id:'hose', label:'ท่อยาง', icon:'🌀'},
+  {id:'leak', label:'การรั่วซึม', icon:'⚠️'},
+];
+
+const INTERIOR_STATUS = ['ปกติ','รอยขีดข่วน','รอยบุบ','แตก/หัก','คราบสกปรก','ต้องเปลี่ยน'];
+const AIRCON_STATUS = ['ปกติ','เย็น','ไม่เย็น','คราบสกปรก','ต้องเปลี่ยน'];
+const ENGINE_STATUS = ['ปกติ','รั่วซึม','ต้องเติม','ต้องซ่อม','ต้องเปลี่ยน'];
+
+let interiorData = {};
+let engineData = {};
+
+function renderInspectionSection(items, dataObj, statusList, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = items.map(item => {
+    const d = dataObj[item.id] || {status:'', note:'', photo:''};
+    const isGoodState = d.status === 'ปกติ' || d.status === 'เย็น';
+    const hasStatus = !!d.status;
+    const borderColor = !hasStatus ? 'var(--border)' : isGoodState ? 'var(--ok)' : 'var(--danger)';
+    
+    // Custom chips for Air Conditioning system
+    const activeStatusList = (item.id === 'aircon' && containerId === 'interior-items') ? AIRCON_STATUS : statusList;
+
+    return `<div style="border:1px solid ${borderColor};border-radius:10px;padding:12px;margin-bottom:10px;background:var(--surface2);transition:border-color .2s">
+      
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:14px;font-weight:600">${item.icon} ${item.label}</span>
+        ${hasStatus ? `<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;
+          background:${isGoodState?'rgba(61,214,140,.15)':'rgba(255,92,92,.15)'};
+          color:${isGoodState?'var(--ok)':'var(--danger)'};
+          border:1px solid ${isGoodState?'rgba(61,214,140,.3)':'rgba(255,92,92,.3)'}">
+          ${d.status}</span>` : '<span style="font-size:11px;color:var(--muted)">ยังไม่ตรวจ</span>'}
+      </div>
+
+      <div class="photo-upload-area" id="insp-photo-${containerId}-${item.id}" style="margin-bottom:10px">
+        ${d.photo
+          ? `<img src="${d.photo}" class="photo-preview">
+             <button class="photo-clear" onclick="clearInspPhoto('${containerId}','${item.id}')">✕</button>`
+          : `<input type="file" accept="image/*" onchange="setInspPhoto('${containerId}','${item.id}',this)">
+             <div class="upload-label"><span class="upload-icon">📷</span><span class="upload-text">ถ่ายรูป</span></div>`
+        }
+      </div>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        ${activeStatusList.map(s => {
+          const sel = d.status === s;
+          const isGoodChip = s === 'ปกติ' || s === 'เย็น';
+          return `<button onclick="setInspStatus('${containerId}','${item.id}','${s}')"
+            style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:${sel?700:500};cursor:pointer;
+              border:1px solid ${sel?(isGoodChip?'var(--ok)':'var(--danger)'):'var(--border)'};
+              background:${sel?(isGoodChip?'rgba(61,214,140,.15)':'rgba(255,92,92,.15)'):'transparent'};
+              color:${sel?(isGoodChip?'var(--ok)':'var(--danger)'):'var(--muted)'};
+              font-family:var(--font);transition:all .15s">${s}</button>`;
+        }).join('')}
+      </div>
+
+      <textarea class="mini-note" placeholder="หมายเหตุ เช่น ตำแหน่งที่พบ ความรุนแรง..."
+        oninput="setInspNote('${containerId}','${item.id}',this.value)">${d.note||''}</textarea>
+    </div>`;
+  }).join('');
+}
+
+function setInspStatus(sectionId, itemId, status) {
+  const dataObj = sectionId === 'interior-items' ? interiorData : engineData;
+  if (!dataObj[itemId]) dataObj[itemId] = {status:'', note:'', photo:''};
+  dataObj[itemId].status = status;
+  renderInspectionSection(
+    sectionId === 'interior-items' ? INTERIOR_ITEMS : ENGINE_ITEMS,
+    dataObj, sectionId === 'interior-items' ? INTERIOR_STATUS : ENGINE_STATUS, sectionId
+  );
+  autosave();
+}
+
+function setInspNote(sectionId, itemId, val) {
+  const dataObj = sectionId === 'interior-items' ? interiorData : engineData;
+  if (!dataObj[itemId]) dataObj[itemId] = {status:'', note:'', photo:''};
+  dataObj[itemId].note = val;
+  autosave();
+}
+
+function setInspPhoto(sectionId, itemId, input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    compressImage(e.target.result, 1200, 0.75, compressed => {
+      const dataObj = sectionId === 'interior-items' ? interiorData : engineData;
+      if (!dataObj[itemId]) dataObj[itemId] = {status:'', note:'', photo:''};
+      dataObj[itemId].photo = compressed;
+      renderInspectionSection(
+        sectionId === 'interior-items' ? INTERIOR_ITEMS : ENGINE_ITEMS,
+        dataObj, sectionId === 'interior-items' ? INTERIOR_STATUS : ENGINE_STATUS, sectionId
+      );
+      autosave();
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearInspPhoto(sectionId, itemId) {
+  const dataObj = sectionId === 'interior-items' ? interiorData : engineData;
+  if (dataObj[itemId]) dataObj[itemId].photo = '';
+  renderInspectionSection(
+    sectionId === 'interior-items' ? INTERIOR_ITEMS : ENGINE_ITEMS,
+    dataObj, sectionId === 'interior-items' ? INTERIOR_STATUS : ENGINE_STATUS, sectionId
+  );
+  autosave();
+}
+
+// ===== Car Models Database =====
+const CAR_MODELS = {
+  'Toyota': ['Camry','Corolla Cross','Yaris','Yaris ATIV','Vios','Hilux Revo','Hilux Champ','Fortuner','RAV4','C-HR','Veloz','Avanza','Innova','Land Cruiser','Land Cruiser Prado','Alphard','Vellfire','Sienta','Rush','Wish','Altis','bZ4X','อื่นๆ'],
+  'Honda': ['Civic','City','HR-V','CR-V','BR-V','Accord','Jazz','WR-V','ZR-V','e:N1','Freed','Odyssey','Mobilio','Brio','อื่นๆ'],
+  'Isuzu': ['D-Max','MU-X','อื่นๆ'],
+  'Mitsubishi': ['Triton','Pajero Sport','Xpander','Outlander','Eclipse Cross','Attrage','Mirage','Galant Fortis','อื่นๆ'],
+  'Mazda': ['Mazda2','Mazda3','CX-3','CX-30','CX-5','CX-8','CX-60','BT-50','อื่นๆ'],
+  'Nissan': ['Navara','Terra','Almera','Note','Kicks','X-Trail','Teana','Sylphy','Leaf','อื่นๆ'],
+  'Ford': ['Ranger','Everest','Territory','Mustang','อื่นๆ'],
+  'Suzuki': ['Swift','Ciaz','XL7','Ertiga','Carry','อื่นๆ'],
+  'Chevrolet': ['Colorado','Trailblazer','Captiva','Sonic','Cruze','อื่นๆ'],
+  'MG': ['MG3','MG5','MG ZS','MG HS','MG EP','MG4 EV','MG VS HEV','Extender','อื่นๆ'],
+  'GWM / Haval': ['Jolion','H6','Poer','Ora Good Cat','อื่นๆ'],
+  'BYD': ['Atto 3','Dolphin','Seal','Han','Tang','Sealion 6','อื่นๆ'],
+  'Neta': ['Neta V','Neta V-II','Neta X','Neta S','อื่นๆ'],
+  'BMW': ['Series 1','Series 2','Series 3','Series 4','Series 5','Series 7','X1','X2','X3','X4','X5','X6','X7','iX1','iX3','i4','i5','iX','Z4','อื่นๆ'],
+  'Mercedes-Benz': ['A-Class','B-Class','C-Class','E-Class','S-Class','GLA','GLB','GLC','GLE','GLS','CLA','EQA','EQB','EQC','EQE','EQS','AMG GT','อื่นๆ'],
+  'Audi': ['A1','A3','A4','A5','A6','A7','A8','Q2','Q3','Q5','Q7','Q8','e-tron','e-tron GT','อื่นๆ'],
+  'Lexus': ['CT','IS','ES','GS','LS','UX','NX','RX','GX','LX','LC','RC','อื่นๆ'],
+  'Volvo': ['S60','S90','V60','V90','XC40','XC60','XC90','C40','อื่นๆ'],
+  'อื่นๆ': ['กรุณาพิมพ์รุ่นเอง']
+};
+
+function onBrandChange() {
+  const brand = document.getElementById('brand').value;
+  const modelSel = document.getElementById('model');
+  const models = CAR_MODELS[brand] || [];
+  if (!models.length || !brand) {
+    modelSel.innerHTML = '<option value="">— เลือกยี่ห้อก่อน —</option>';
+    return;
+  }
+  modelSel.innerHTML = '<option value="">— เลือกรุ่น —</option>' +
+    models.map(m => `<option value="${m}">${m}</option>`).join('');
+  if (brand === 'อื่นๆ') {
+    modelSel.outerHTML = '<input id="model" type="text" placeholder="พิมพ์รุ่นรถ..." oninput="autosave()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:15px;font-family:var(--font);outline:none">';
+  }
+}
+
+const _origSetV = setV;
+function setV(id, val) {
+  if (id === 'color' && val) {
+    const sel = document.getElementById('color');
+    if (!sel) return;
+    let matched = false;
+    for (const opt of sel.options) {
+      if (opt.value === val || opt.text === val) { sel.value = opt.value; matched = true; break; }
+    }
+    if (!matched) {
+      sel.value = 'อื่นๆ';
+      const custom = document.getElementById('color-custom');
+      if (custom) { custom.value = val; custom.style.display = 'block'; }
+    }
+    return;
+  }
+  if (id === 'brand' && val) {
+    const el = document.getElementById('brand');
+    if (el && el.tagName === 'SELECT') {
+      el.value = val;
+      onBrandChange();
+    }
+    return;
+  }
+  if (id === 'model' && val) {
+    setTimeout(() => {
+      const el = document.getElementById('model');
+      if (el) el.value = val;
+    }, 50);
+    return;
+  }
+  const el = document.getElementById(id);
+  if (el) el.value = val || '';
+}
+
+// ===== Init =====
+(function init(){
+  populateYearDropdown();
+  const reports=getAllReports();
+  if(reports.length){
+    loadData(reports[0]);
+  } else {
+    currentId='r_'+Date.now();
+    const rid='INS-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
+    document.getElementById('report-id-display').textContent=rid;
+    renderPaintPoints();
+    renderInspectionSection(INTERIOR_ITEMS, interiorData, INTERIOR_STATUS, 'interior-items');
+    renderInspectionSection(ENGINE_ITEMS, engineData, ENGINE_STATUS, 'engine-items');
+  }
+})();
+</script>
+</body>
+</html>
